@@ -6,7 +6,6 @@ import wave
 import tempfile
 import logging
 
-# Настройка логирования для сервера
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s",
@@ -16,7 +15,6 @@ logging.basicConfig(
     ]
 )
 
-# Настройка логирования для клиента
 client_logger = logging.getLogger("client")
 client_logger.setLevel(logging.INFO)
 client_handler = logging.FileHandler("client.log")
@@ -54,11 +52,10 @@ def handle_client(conn, addr):
                 conn.send(json.dumps(json.load(f)).encode())
         else:
             filename, start, end = data.split(",")
-            start = int(float(start)) * 1000  # Преобразуем в миллисекунды
+            start = int(float(start)) * 1000  
             end = int(float(end)) * 1000
             logging.info(f"Клиент {addr} запросил отрезок аудио из файла {filename} с {start} до {end} мс")
 
-            # Открываем исходный аудиофайл
             with wave.open(os.path.join("audio_files", filename), 'rb') as audio_file:
                 frames = audio_file.getnframes()
                 rate = audio_file.getframerate()
@@ -72,17 +69,15 @@ def handle_client(conn, addr):
 
                 # Создаем временный файл
                 with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as temp_file:
-                    temp_filename = temp_file.name  # Получаем имя временного файла
+                    temp_filename = temp_file.name  
                     with wave.open(temp_filename, 'wb') as segment_file:
-                        segment_file.setparams(audio_file.getparams())  # Копируем параметры аудио
-                        segment_file.writeframes(segment_data)  # Записываем данные
+                        segment_file.setparams(audio_file.getparams())  
+                        segment_file.writeframes(segment_data)  
 
-                    # Отправляем временный файл клиенту
                     with open(temp_filename, "rb") as f:
                         conn.send(f.read())
                     logging.info(f"Отправлен отрезок аудио клиенту {addr}")
 
-                # Удаляем временный файл после отправки
                 os.remove(temp_filename)
                 logging.info(f"Временный файл {temp_filename} удален")
 
@@ -141,9 +136,7 @@ def start_client():
     request_audio_segment(filename, start, end)
 
 if __name__ == "__main__":
-    # Запуск сервера в отдельном потоке
     server_thread = threading.Thread(target=start_server)
     server_thread.start()
 
-    # Запуск клиента в основном потоке
     start_client()
